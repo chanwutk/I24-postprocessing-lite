@@ -19,7 +19,7 @@ The benchmarking datasets released along with this paper are the following:
 - `SIM_RAW`: Manually perturbed TransModeler microsimulation data
 - `SIM_REC`: Reconstructed TransModeler microsimulation data from `SIM_RAW` using the proposed algorithms
 
-The following three datasets are sourced from the I-24 MOTION validation system (I24-3D) [Gloudemans et al., 2023]. Each describes a distinct traffic scenario. The ground truth datasets comprise a total of 877,000 manually-labeled 3D bounding boxes of vehicles, derived from 57 minutes of video data collected across 16-17 cameras. Details see https://github.com/DerekGloudemans/I24-3D-dataset/tree/main. 
+The following three datasets are sourced from the I-24 MOTION validation system (I24-3D) [Gloudemans et al., 2023]. Each describes a distinct traffic scenario. The ground truth datasets comprise a total of 877,000 manually-labeled 3D bounding boxes of vehicles, derived from 57 minutes of video data collected across 16-17 cameras. Details see https://github.com/DerekGloudemans/I24-3D-dataset. 
 - `GT_i`:  Ground truth of a 60-second free-flow traffic scenario
 - `RAW_i`: The raw tracking results obtained from the video recordings of GT_i.
 - `REC_i`: Reconstructed data from `RAW_i` using the proposed algorithms.
