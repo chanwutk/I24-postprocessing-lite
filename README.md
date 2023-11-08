@@ -57,7 +57,7 @@ There are three main algorithms in this postprocessing pipeline:
 
 
 ## Output data format: 
-Data documentation see [[insert link]](https://github.com/I24-MOTION/I24M_documentation)
+Data documentation see https://github.com/I24-MOTION/I24M_documentation
 
 ```python
 {
