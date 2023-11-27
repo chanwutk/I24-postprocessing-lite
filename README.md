@@ -53,11 +53,11 @@ The config setting is located in `parameters.json` in the `config` folder. You m
 There are three main algorithms in this postprocessing pipeline:
 1. Fragment merging (`merge_fragments` in `merge.py`). This algorithm identifies pair-wise fragments that should be merged into one. The merging criteria is that two fragments should have time-overlap, and should be "close" in the time-space domain by some metrics. The merging operation is "associative", meaning that multiple fragments could be merged into one trajectory if any one of the fragments merges to at least another fragment in the set. Finding the merged sets is equivalent to finding connected components in an undirected graph.
 2. Fragment stitching (`min_cost_flow_online_alt_path` in `min_cost_flow.py). This algorithm identifies fragments that should be stitched into one. The stitching criteria states that two fragmetns should NOT have time-overlap, and should be kinematically "close". Due to the sequential order and conflicts restriction, finding the stitched sets is equivalent to finding the min-cost-flow in a directed graph. Details of this algorithm is specified in https://arxiv.org/abs/2311.04749.
-3. Trajectory rectification (`opt2_l1_constr` in `utils_opt.py`). This step simultaneously imputes missing data, identifies and removes outliers and denoises a single trajectory independent of others. It is formulated as a convex program.
+3. Trajectory rectification (`opt2_l1_constr` in `utils_opt.py`). This step simultaneously imputes missing data, identifies and removes outliers and denoises a single trajectory independent of others. It is formulated as a convex program. Details of this algorithm is specified in https://arxiv.org/abs/2212.07907.
 
 
 ## Output data format: 
-[[Data documentation]](https://github.com/I24-MOTION/I24M_documentation)
+More on data schema and layout of the testbed can be found in [[data documentation]](https://github.com/I24-MOTION/I24M_documentation).
 
 ```python
 {
