@@ -53,13 +53,11 @@ class MOTGraphSingle:
             self.param["stitch_thresh"] = self.param["master_stitch_thresh"]
         else:
             self.param["time_win"] = parameters["time_win"]
-        self.compute_node_pos_map = {key:val for val,key in enumerate(parameters["compute_node_list"])}    
+        self.compute_node_pos_map = {key:val for val,key in enumerate(parameters["compute_node_list"])}   
         self.cache = {}
         self.direction = direction
-
-        # print(f"************** {parameters['compute_node_list']}")
           
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def add_node(self, fragment):
         '''
         add one node i in G [no inclusion edge]
@@ -130,7 +128,7 @@ class MOTGraphSingle:
                 pass
 
         
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def verify_path(self, path, cost_thresh = 10):
         # double check if any pair in path have conflict (large cost)
         # path is ordered by last_timestamp
@@ -146,7 +144,7 @@ class MOTGraphSingle:
         return True
     
     
-    @catch_critical(errors = (Exception))       
+    # @catch_critical(errors = (Exception))       
     def clean_graph(self, path):
         '''
         remove all nodes in path from G and in_graph_deque
@@ -165,7 +163,7 @@ class MOTGraphSingle:
                 pass
         
     
-    @catch_critical(errors = (Exception))        
+    # @catch_critical(errors = (Exception))        
     def find_legal_neighbors(self, node):
         '''
         find ``neighbors`` of node x in G such that 
@@ -188,7 +186,7 @@ class MOTGraphSingle:
 
             
             
-    @catch_critical(errors = (Exception))    
+    # @catch_critical(errors = (Exception))    
     def find_alternating_path(self, root):
         '''
         construct an alternative matching tree (Hungarian tree) from root, alternate between unmatched edge and matched edge
@@ -225,7 +223,7 @@ class MOTGraphSingle:
         return best_path, best_dist
     
     
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def augment_path(self, node):
         '''
         calculate an alternating path by adding node to G (assume node is already properly added to G)
@@ -248,7 +246,7 @@ class MOTGraphSingle:
                     self.G[alt_path[i+1]][alt_path[i]]["match"] = False
                 forward = not forward
         
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def get_next_match(self, node):
         for curr, next, data in self.G.out_edges(node, data=True):
             if data["match"]:
@@ -257,7 +255,7 @@ class MOTGraphSingle:
         return None  
     
     
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def get_all_traj(self):
         '''
         only called at final flushing
@@ -285,7 +283,7 @@ class MOTGraphSingle:
         return self.all_paths
             
         
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def pop_path(self, time_thresh):
         '''
         examine tail and pop if timeout (last_timestamp < time_thresh)
@@ -324,7 +322,7 @@ class MOTGraphSingle:
         return all_paths
         
     
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def get_filters(self, path):
         filters = []
         for _id in path:
@@ -335,7 +333,7 @@ class MOTGraphSingle:
         return filters
     
     
-    @catch_critical(errors = (Exception))
+    # @catch_critical(errors = (Exception))
     def get_traj_dicts(self, path):
         '''
         get a list of corresponding traj dictionaries of path
@@ -351,79 +349,4 @@ class MOTGraphSingle:
         
        
 if __name__ == '__main__':
-    import os
-    from i24_configparse import parse_cfg
-    
-    # get parameters
-    cwd = os.getcwd()
-    cfg = "../config"
-    config_path = os.path.join(cwd,cfg)
-    os.environ["user_config_directory"] = config_path
-    os.environ["my_config_section"] = "DEBUG"
-    parameters = parse_cfg("my_config_section", cfg_name = "test_param.config")
-    
-    
-    m = MOTGraphSingle()
-    
-    # ex1
-    # m.G.add_edge("g", "a", weight=2, match = True)
-    # m.G.add_edge("g", "b", weight=1, match = False)
-    # m.G.add_edge("g", "d", weight=2, match = True)
-    # m.G.add_edge("e", "d", weight=2.5, match = False)
-    # m.G.add_edge("e", "b", weight=3, match = True)
-    # m.G.add_edge("i", "b", weight=5, match = False)
-    # m.G.add_edge("t", "i", weight=0, match = True)
-    # m.G.add_edge("t", "g", weight=0, match = True)
-    # m.G.add_edge("t", "e", weight=0, match = True)
-    
-    
-    # ex2
-    # m.G.add_edge("t", "a", weight=0, match = True)
-    # m.G.add_edge("t", "b", weight=0, match = True)
-    # m.G.add_edge("t", "c", weight=0, match = True)
-    # m.G.add_edge("c", "a", weight=2, match = False)
-    # m.G.add_edge("c", "b", weight=3.5, match = False)
-    # m.augment_path("c")
-    # print("c: ", m.get_all_traj())
-    
-    # m.G.add_edge("d", "b", weight=3, match = False)
-    # m.G.add_edge("d", "a", weight=0.2, match = False)
-    # m.G.add_edge("t", "d", weight=0, match = True)
-    # m.augment_path("d")
-    # print("d: ", m.get_all_traj())
-    
-    # m.G.add_edge("e", "a", weight=5, match = False)
-    # m.G.add_edge("t", "e", weight=0, match = True)
-    # m.augment_path("e")
-    # print("e: ", m.get_all_traj())
-    
-    
-    # ex3
-    m.G.add_edge("t", "a", weight=0, match = True)
-    m.G.add_edge("t", "b", weight=0, match = True)
-    m.G.add_edge("t", "c", weight=0, match = True)
-    m.G.add_edge("c", "a", weight=6, match = False)
-    m.G.add_edge("c", "b", weight=1, match = False)
-    m.augment_path("c")
-    print("c: ", m.get_all_traj())
-    
-    m.G.add_edge("d", "b", weight=3, match = False)
-    m.G.add_edge("d", "a", weight=7, match = False)
-    m.G.add_edge("t", "d", weight=0, match = True)
-    m.augment_path("d")
-    print("d: ", m.get_all_traj())
-    
-    # alt_path, delta = m.find_alternating_path("c")
-    # print(alt_path, delta)
-
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
-    
+    print("not implemented")

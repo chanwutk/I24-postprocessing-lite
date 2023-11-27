@@ -21,40 +21,12 @@ import reconciliation as rec
 import merge
 
 
-#%% SIGNAL HANDLING
-class SIGINTException(Exception):
-    pass
 
 def main(raw_collection = None, reconciled_collection = None):
-    
-    
-    def soft_stop_hdlr(sig, action):
-        # send SIGINT to all subprocesses
-        manager_logger.info("Manager received SIGINT")
-        raise SIGINTException # so to exit the while true loop
-        
-        
-    def finish_hdlr(sig, action):
-        # kill data_reader only (from all nodes)
-        manager_logger.info("Manager received SIGUSR1")
-        for proc_name, proc_info in master_proc_map.items():
-            if "feed" in proc_name:
-                try:
-                    proc_info["keep_alive"] = False
-                    os.kill(pid_tracker[proc_name], signal.SIGINT)
-                    manager_logger.info("Sent SIGINT to PID={} ({})".format(pid_tracker[proc_name], proc_name))
-                except:
-                    pass
-        
-
-    # register signals
-    signal.signal(signal.SIGINT, soft_stop_hdlr)
-    signal.signal(signal.SIGUSR1, finish_hdlr)
-
 
     # %% Parameters, data structures and processes
     # GET PARAMAETERS
-    with open("config/parameters.json") as f:
+    with open("parameters.json") as f:
         parameters = json.load(f)
     
     if raw_collection:
@@ -63,8 +35,7 @@ def main(raw_collection = None, reconciled_collection = None):
     if reconciled_collection:
         parameters["reconciled_collection"] = reconciled_collection
     
-    with open(os.path.join(os.environ["USER_CONFIG_DIRECTORY"], "db_param.json")) as f:
-        db_param = json.load(f)
+    db_param = None
         
     # CHANGE NAME OF THE LOGGER
     manager_logger = logger
@@ -84,11 +55,9 @@ def main(raw_collection = None, reconciled_collection = None):
     # mp_param["stitcher_mode"] = "master" # switch from local to master
     
     # initialize some db collections
-    df.initialize(mp_param, db_param) # read from raw collection
     manager_logger.info("Post-processing manager initialized db collections. Creating shared data structures")
     directions = ["eb", "wb"]
             
-    
     # -- master processes (not videonode specific) START AFTER ALL THE LOCAL PROCESSES DIE
     master_queues_map = {} # key:proc_name, val:queue that this process writes to
     for dir in directions:
@@ -151,63 +120,47 @@ def main(raw_collection = None, reconciled_collection = None):
     start = time.time()
     begin = start
     while True:
-        try:
-            now = time.time()
-            if now - begin > 14400 and all([q.empty() for _,q in master_queues_map.items()]): # 4hr
-                manager_logger.info("Master processes exceed running for 4hr and all queues are empty.")
-                break
+        now = time.time()
+        if now - begin > 14400 and all([q.empty() for _,q in master_queues_map.items()]): # 4hr
+            manager_logger.info("Master processes exceed running for 4hr and all queues are empty.")
+            break
+        
+        if now - begin > 20 and all([q.empty() for _,q in master_queues_map.items()]) and \
+        not any([master_proc_map[proc]["process"].is_alive() for proc in master_proc_map]):
+            manager_logger.info("Master processes complete in {} sec.".format(now-begin))
+            break
             
-            if now - begin > 20 and all([q.empty() for _,q in master_queues_map.items()]) and \
-            not any([master_proc_map[proc]["process"].is_alive() for proc in master_proc_map]):
-                manager_logger.info("Master processes complete in {} sec.".format(now-begin))
-                break
-                
-    
-            for proc_name, proc_info in master_proc_map.items():
 
-                if not proc_info["process"].is_alive():
-                    pred_alive = [False] if not proc_info["predecessor"] else \
-                    [master_proc_map[pred]["process"].is_alive() for pred in proc_info["predecessor"]]
-                    queue_empty = [True] if not proc_info["dependent_queue"] else \
-                    [q.empty() for q in proc_info["dependent_queue"]]
-                    
-                    if not any(pred_alive) and all(queue_empty): # natural death
-                        proc_info["keep_alive"] = False
-#                         manager_logger.info("{} died naturally".format(proc_name))
-                    else:
-                        # resurrect this process
-                        manager_logger.warning(f" Resurrect {proc_name}")
-                        subsys_process = mp.Process(target=proc_info["command"], 
-                                                    args=proc_info["args"], 
-                                                    name=proc_name, daemon=False)
-                        subsys_process.start()
-                        pid_tracker[proc_name] = subsys_process.pid
-                        master_proc_map[proc_name]["process"] = subsys_process 
+        for proc_name, proc_info in master_proc_map.items():
+
+            if not proc_info["process"].is_alive():
+                pred_alive = [False] if not proc_info["predecessor"] else \
+                [master_proc_map[pred]["process"].is_alive() for pred in proc_info["predecessor"]]
+                queue_empty = [True] if not proc_info["dependent_queue"] else \
+                [q.empty() for q in proc_info["dependent_queue"]]
                 
-            # Heartbeat queue sizes
-            now = time.time()
-            if now - start > HB:
-                for proc_name, q in master_queues_map.items():
-                    if not q.empty():
-                        manager_logger.info("Queue size for {}: {}".format(proc_name, 
-                                                                           master_queues_map[proc_name].qsize()))
-                manager_logger.info("Master processes have been running for {} sec".format(now-begin))
-                start = time.time()
-                
-        except SIGINTException: 
-            manager_logger.info("Postprocessing interrupted by SIGINT.")
-            for proc_name in master_proc_map:
-                try:
-                    os.kill(pid_tracker[proc_name], signal.SIGKILL)
-                    manager_logger.info("Sent SIGKILL to PID={} ({})".format(pid_tracker[proc_name], proc_name))
-                    time.sleep(0.5)
-                    
-                except:
-                    pass
-            for q_name, q in master_queues_map.items():
+                if not any(pred_alive) and all(queue_empty): # natural death
+                    proc_info["keep_alive"] = False
+                else:
+                    # resurrect this process
+                    manager_logger.warning(f" Resurrect {proc_name}")
+                    subsys_process = mp.Process(target=proc_info["command"], 
+                                                args=proc_info["args"], 
+                                                name=proc_name, daemon=False)
+                    subsys_process.start()
+                    pid_tracker[proc_name] = subsys_process.pid
+                    master_proc_map[proc_name]["process"] = subsys_process 
+            
+        # Heartbeat queue sizes
+        now = time.time()
+        if now - start > HB:
+            for proc_name, q in master_queues_map.items():
                 if not q.empty():
-                    manager_logger.info("Queue size after process {}: {}".format(q_name, q.qsize()))
-            break # break the while true loop
+                    manager_logger.info("Queue size for {}: {}".format(proc_name, 
+                                                                        master_queues_map[proc_name].qsize()))
+            manager_logger.info("Master processes have been running for {} sec".format(now-begin))
+            start = time.time()
+                
     
     manager_logger.info("MASTER Postprocessing Mischief Managed.")
     

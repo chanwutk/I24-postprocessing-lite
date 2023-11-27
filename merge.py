@@ -16,12 +16,8 @@ import networkx as nx
 import numpy as np
 import queue
 import pandas as pd
-from collections import OrderedDict
-from functools import reduce
 import time
-import signal
-import sys
-from bson.objectid import ObjectId
+
 
 # from i24_database_api import DBClient
 from utils.misc import calc_fit_select, find_overlap_idx
@@ -29,20 +25,12 @@ import i24_logger.log_writer as log_writer
 from i24_logger.log_writer import catch_critical
 from utils.utils_stitcher_cost import bhattacharyya_distance
 from utils.misc import SortedDLL
-# import warnings
-# warnings.filterwarnings('error')
+import warnings
+warnings.filterwarnings('error')
 
-class SIGINTException(SystemExit):
-    pass
 
-def soft_stop_hdlr(sig, action):
-    '''
-    Signal handling for SIGINT
-    Soft terminate current process. Close ports and exit.
-    '''
-    raise SIGINTException # so to exit the while true loop
 
-@catch_critical(errors = (RuntimeWarning))
+# @catch_critical(errors = (RuntimeWarning))
 def merge_resample(traj, conf_threshold):
     '''
     traj: dict
@@ -102,8 +90,7 @@ def merge_resample(traj, conf_threshold):
     return traj
 
 
-import warnings
-warnings.filterwarnings('error')
+
         
 # @catch_critical(errors = (Exception))
 def merge_cost(track1, track2):
@@ -132,14 +119,7 @@ def merge_cost(track1, track2):
         return 1e5
 
     s1, e1, s2, e2 = find_overlap_idx(t1, t2)
-    
-    # check if the overalpped position deviates too much
-    # try:
-    # if np.nanmean(np.abs(x1[s1:e1] - x2[s2:e2])) > 30 or np.nanmean(np.abs(y1[s1:e1] - y2[s2:e2])) > 6:
-    #     return 1e6
 
-        
-    # tt2 = time.time()
     
     # try to vectorize
     mu1_arr = np.array([x1[s1:e1], y1[s1:e1]]) # 2xK
@@ -302,7 +282,7 @@ def overlap_cost(df1, df2):
     return nll
 
     
-@catch_critical(errors = (RuntimeWarning))   
+# @catch_critical(errors = (RuntimeWarning))   
 def combine_merged(unmerged):
     '''
     unmerged: a list of (fragment-dict, fragment-df) tuples
@@ -360,7 +340,7 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
         raw: fragment dict
         data: resampled fragment df
     '''
-    signal.signal(signal.SIGINT, soft_stop_hdlr)
+
     merge_logger = log_writer.logger
     if name:
         merge_logger.set_name(name)
@@ -401,10 +381,7 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
                 merge_logger.info("Final flushing {} raw fragments --> {} merged fragments".format(input_obj, output_obj),extra = None)
                 break
             
-            except SIGINTException:
-                merge_logger.warning("SIGINT detected when trying to get from queue. Exit")
-                break
-            
+           
             t1 = time.time()
             resampled = merge_resample(fragment, CONF_THRESH) # convert to df ! last_timestamp might be changed!!!
             t2 = time.time()
@@ -463,9 +440,6 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
 
                 else:
                     break # no need to check lru further
-            # clean up graph and lru
-            # if len(to_remove)>0:
-            #     print(f"remove {len(to_remove)}")
             
             G.remove_nodes_from(to_remove)
             t2 = time.time()
@@ -478,13 +452,9 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
                 # merge_logger.info("Time elapsed for resample: {:.2f}, adding edge: {:.2f}, remove: {:.2f}, total run time: {:.2f}".format(ct1, ct2, ct3, now-start))
                 merge_logger.info("{} raw fragments --> {} merged fragments, skipped {} low_conf.".format(input_obj, output_obj, low_conf_cnt),extra = None)
                 begin = time.time()
-
-        except SIGINTException:  # SIGINT detected
-            merge_logger.info("SIGINT detected. Exit.")
-            break
         
         except (ConnectionResetError, BrokenPipeError, EOFError) as e:   
-            merge_logger.warning("Connection error: {}".format(e))
+            merge_logger.warning("Connection error: {}".format(str(e)))
             break
         
         # added 6/14/2023
@@ -501,7 +471,7 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
             merge_logger.info("Final flushing {} raw fragments --> {} merged fragments".format(input_obj, output_obj),extra = None)
             break
             
-    # sys.exit()
+    return
     
         
 
@@ -509,56 +479,4 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
         
 if __name__ == '__main__':
 
-    
-    import json
-    import os
-    # from _evaluation.eval_stitcher import plot_traj, plot_stitched
-    # from merge import merge_fragments
-    from i24_database_api import DBClient
-    from bson.objectid import ObjectId
-    from itertools import combinations
-
-    with open("config/parameters.json") as f:
-        parameters = json.load(f)
-    parameters["raw_trajectory_queue_get_timeout"] = 0.1
-    with open(os.path.join(os.environ["USER_CONFIG_DIRECTORY"], "db_param.json")) as f:
-        db_param = json.load(f)  
-        
-    raw_collection = "wednesday_2d"
-    rec_collection = "wednesday_2d__2"
-    
-    dbc = DBClient(**db_param)
-    raw = dbc.client["trajectories"][raw_collection]
-    rec = dbc.client["reconciled"][rec_collection]
-    temp = dbc.client["temp"][rec_collection]
-    
-    # RES_THRESH_X = parameters["stitcher_args"]["residual_threshold_x"]
-    # RES_THRESH_Y = parameters["residual_threshold_y"]
-    # TIME_WIN = parameters["time_win"]
-    # CONF_THRESH = parameters["conf_threshold"]
-    parameters["merger_timeout"] = 0.1
-    
-    f_ids = [ObjectId("644c6f95c2c8fad0b2cf4232"),
-    # ObjectId("644c64cbae8899e271b5f9eb"),
-    ObjectId("644c6f58c2c8fad0b2cf4192")]
-    
-    fragment_queue = queue.Queue()
-    merged_queue = queue.Queue()
-    fragments = [fragment_queue.put(traj) for traj in temp.find({"_id": {"$in": f_ids}}).sort( "last_timestamp", 1 )]
-    
-        
-    # for fgmt1, fgmt2 in combinations(fragments, 2):
-    #     fgmt1 = merge_resample(fgmt1, CONF_THRESH)
-    #     fgmt2 = merge_resample(fgmt2, CONF_THRESH)
-    #     cost = merge_cost( fgmt1, fgmt2)
-    #     print(fgmt1["_id"], fgmt2["_id"], cost)
-    
-
-    
-    merge_fragments("west", fragment_queue, merged_queue, parameters)
-    print("merged to ", merged_queue.qsize())
-    # dummy_merge("west", fragment_queue, merged_queue, parameters)
-    # from multi_opt import plot_track
-    # plot_track(trajs)
-    
-    
+    print("not implemented")
