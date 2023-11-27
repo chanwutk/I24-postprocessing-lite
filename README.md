@@ -40,7 +40,7 @@ run `pp_lite()` with the following config setting.
 
 
 ### Configuration setting 
-The config setting is located in `parameters.json` in the `config` folder. You may specify the following parameters:
+The config setting is located in `parameters.json`. You may specify the following parameters:
 
 - `description`: give a short description of the run. This information will be saved to database as meta data
 - `raw_database`: name of the database where the raw fragments are read. Currently set as "trajectories"
