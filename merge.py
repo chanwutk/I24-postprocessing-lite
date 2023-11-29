@@ -21,8 +21,6 @@ import time
 
 # from i24_database_api import DBClient
 from utils.misc import calc_fit_select, find_overlap_idx
-import i24_logger.log_writer as log_writer
-from i24_logger.log_writer import catch_critical
 from utils.utils_stitcher_cost import bhattacharyya_distance
 from utils.misc import SortedDLL
 import warnings
@@ -249,7 +247,7 @@ def dummy_merge(direction, fragment_queue, merged_queue, parameters):
 
     
     
-@catch_critical(errors = (RuntimeWarning))
+# @catch_critical(errors = (RuntimeWarning))
 def overlap_cost(df1, df2):
     '''
     use bhattacharyya_distance
@@ -341,13 +339,10 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
         data: resampled fragment df
     '''
 
-    merge_logger = log_writer.logger
-    if name:
-        merge_logger.set_name(name)
-    else:
-        merge_logger.set_name("merger_"+direction)
+    if not name:
+        name = "merger_"+direction
         
-    merge_logger.info("Process started")
+    print(f"{name} process started")
     
     DIST_THRESH = parameters["merge_thresh"] # bhattar distance distance threshold
     TIMEWIN = parameters["time_win"]
@@ -369,7 +364,7 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
                 fragment = fragment_queue.get(timeout = TIMEOUT) # fragments are ordered in last_timestamp
                 cntr += 1 # TODO: could over flow
             except queue.Empty:
-                merge_logger.warning("merger timed out after {} sec.".format(TIMEOUT))
+                print("merger timed out after {} sec.".format(TIMEOUT))
                 comps = nx.connected_components(G)
                 
                 for comp in comps:
@@ -378,7 +373,7 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
                     unmerged = [ G.nodes[v]["data"] for v in list(comp)]
                     merged = combine_merged_dict(unmerged)
                     merged_queue.put(merged) 
-                merge_logger.info("Final flushing {} raw fragments --> {} merged fragments".format(input_obj, output_obj),extra = None)
+                print("Final flushing {} raw fragments --> {} merged fragments".format(input_obj, output_obj),extra = None)
                 break
             
            
@@ -405,14 +400,12 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
             for node_id, node in curr_nodes:
                 # if they have time overlaps
                 dist = merge_cost(node["data"], resampled) # TODO: these two are not ordered in time,check time overlap within
-                # merge_logger.info("{} and {}, cost={:.4f}".format(node_id, fragment["_id"], dist))
         
                 if dist <= DIST_THRESH:
                     G.add_edge(node_id, curr_id, weight = dist)
                     sdll.update(key=curr_id, attr_val=curr_time)
                     sdll.update(key=node_id, attr_val=curr_time)
                     
-                    # merge_logger.info("Merged {} and {}, cost={:.4f}".format(node_id, fragment["_id"], dist))
             
             t2 = time.time()
             ct2 += t2-t1
@@ -428,7 +421,6 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
                 if first_tail < curr_time - TIMEWIN:                
                     comp = nx.node_connected_component(G, first_id)
                     # if aa in comp or bb in comp:
-                    # merge_logger.info("Time out Merged {}, {:.2f}, {:.2f}, {:.2f}".format(comp, first_tail, curr_time, TIMEWIN), extra=None)
                     input_obj += len(comp)
                     output_obj += 1
                     unmerged = [G.nodes[v]["data"] for v in list(comp)]
@@ -448,18 +440,17 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
             # heartbeat log
             now = time.time()
             if now - begin > HB:
-                merge_logger.info("Graph nodes : {}, Graph edges: {}, cache: {}".format(G.number_of_nodes(), G.number_of_edges(), sdll.count()),extra = None)
-                # merge_logger.info("Time elapsed for resample: {:.2f}, adding edge: {:.2f}, remove: {:.2f}, total run time: {:.2f}".format(ct1, ct2, ct3, now-start))
-                merge_logger.info("{} raw fragments --> {} merged fragments, skipped {} low_conf.".format(input_obj, output_obj, low_conf_cnt),extra = None)
+                print("Graph nodes : {}, Graph edges: {}, cache: {}".format(G.number_of_nodes(), G.number_of_edges(), sdll.count()))
+                print("{} raw fragments --> {} merged fragments, skipped {} low_conf.".format(input_obj, output_obj, low_conf_cnt))
                 begin = time.time()
         
         except (ConnectionResetError, BrokenPipeError, EOFError) as e:   
-            merge_logger.warning("Connection error: {}".format(str(e)))
+            print("Connection error: {}".format(str(e)))
             break
         
         # added 6/14/2023
         except Exception as e: # other unknown exceptions are handled as error TODO UNTESTED CODE!
-            merge_logger.error("Other error: {}, push all merged trajs to queue".format(e))
+            print("Other error: {}, push all merged trajs to queue".format(e))
             
             comps = nx.connected_components(G)
             for comp in comps:
@@ -468,7 +459,7 @@ def merge_fragments(direction, fragment_queue, merged_queue, parameters, name=No
                 unmerged = [ G.nodes[v]["data"] for v in list(comp)]
                 merged = combine_merged_dict(unmerged)
                 merged_queue.put(merged) 
-            merge_logger.info("Final flushing {} raw fragments --> {} merged fragments".format(input_obj, output_obj),extra = None)
+            print("Final flushing {} raw fragments --> {} merged fragments".format(input_obj, output_obj))
             break
             
     return
