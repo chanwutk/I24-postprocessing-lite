@@ -13,6 +13,8 @@ This work is in review. The prepint is available at https://arxiv.org/abs/2212.0
 }
 ```
 
+![postproc_lite_architecture](https://github.com/yanb514/I24-postprocessing-lite/assets/30248823/d9890bdd-ac3c-473a-8191-942c9157d3c7)
+
 ## Benchmarking datasets
 The benchmarking datasets released along with this paper are the following:
 - `SIM_GT`: TransModeler microsimulation data: 15 min, 2000 ft, 4 lanes
