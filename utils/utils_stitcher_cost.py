@@ -1,13 +1,7 @@
 '''
-data_association module connected with database
-3/25: first pass of spatial_temporal_match_online ready
-- parallel processes?
-- how to set up queues?
+
 '''
 import numpy as np
-# import torch
-# from scipy import stats
-from i24_logger.log_writer import catch_critical
 from utils.misc import calc_fit_select, calc_fit_select_ransac
 import statsmodels.api as sm
 import warnings
@@ -48,7 +42,6 @@ def weighted_least_squares(t,x,y,weights=None):
     fity = [resy.params[1],resy.params[0]]
     return fitx, fity
 
-@catch_critical(errors = (Exception))
 def stitch_cost(track1, track2, TIME_WIN, param):
     '''
     use bhattacharyya_distance
@@ -188,8 +181,6 @@ def stitch_cost(track1, track2, TIME_WIN, param):
 
 
 
-
-@catch_critical(errors = (Exception))
 def stitch_cost_simple_distance(track1, track2, TIME_WIN, param):
     """
     A simple distance metric ||p_i(t_e^i)-p_j(t_s^j)||_2^2
