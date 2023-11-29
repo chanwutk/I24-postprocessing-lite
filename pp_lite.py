@@ -8,11 +8,9 @@ run only 1 pass, no parallel compute
 
 import multiprocessing as mp
 import os
-import signal
 import time
 import json
 from collections import defaultdict
-from i24_logger.log_writer import logger
 
 # Custom modules
 import data_feed as df
@@ -37,15 +35,12 @@ def main(raw_collection = None, reconciled_collection = None):
     
     db_param = None
         
-    # CHANGE NAME OF THE LOGGER
-    manager_logger = logger
-    manager_logger.set_name("postproc_manager")
-    setattr(manager_logger, "_default_logger_extra",  {})
+    # Log heartbeat
     HB = parameters["log_heartbeat"]
     
     # CREATE A MANAGER
     mp_manager = mp.Manager()
-    manager_logger.info("Post-processing manager has PID={}".format(os.getpid()))
+    print("Post-processing manager has PID={}".format(os.getpid()))
 
     # SHARED DATA STRUCTURES
     mp_param = mp_manager.dict()
@@ -55,7 +50,7 @@ def main(raw_collection = None, reconciled_collection = None):
     # mp_param["stitcher_mode"] = "master" # switch from local to master
     
     # initialize some db collections
-    manager_logger.info("Post-processing manager initialized db collections. Creating shared data structures")
+    print("Post-processing manager initialized db collections. Creating shared data structures")
     directions = ["eb", "wb"]
             
     # -- master processes (not videonode specific) START AFTER ALL THE LOCAL PROCESSES DIE
@@ -122,12 +117,12 @@ def main(raw_collection = None, reconciled_collection = None):
     while True:
         now = time.time()
         if now - begin > 14400 and all([q.empty() for _,q in master_queues_map.items()]): # 4hr
-            manager_logger.info("Master processes exceed running for 4hr and all queues are empty.")
+            print("postproc_manager | Master processes exceed running for 4hr and all queues are empty.")
             break
         
         if now - begin > 20 and all([q.empty() for _,q in master_queues_map.items()]) and \
         not any([master_proc_map[proc]["process"].is_alive() for proc in master_proc_map]):
-            manager_logger.info("Master processes complete in {} sec.".format(now-begin))
+            print("postproc_manager | Master processes complete in {} sec.".format(now-begin))
             break
             
 
@@ -143,7 +138,7 @@ def main(raw_collection = None, reconciled_collection = None):
                     proc_info["keep_alive"] = False
                 else:
                     # resurrect this process
-                    manager_logger.warning(f" Resurrect {proc_name}")
+                    print(f"postproc_manager | Resurrect {proc_name}")
                     subsys_process = mp.Process(target=proc_info["command"], 
                                                 args=proc_info["args"], 
                                                 name=proc_name, daemon=False)
@@ -156,13 +151,13 @@ def main(raw_collection = None, reconciled_collection = None):
         if now - start > HB:
             for proc_name, q in master_queues_map.items():
                 if not q.empty():
-                    manager_logger.info("Queue size for {}: {}".format(proc_name, 
+                    print("postproc_manager | Queue size for {}: {}".format(proc_name, 
                                                                         master_queues_map[proc_name].qsize()))
-            manager_logger.info("Master processes have been running for {} sec".format(now-begin))
+            print("postproc_manager | Master processes have been running for {} sec".format(now-begin))
             start = time.time()
                 
     
-    manager_logger.info("MASTER Postprocessing Mischief Managed.")
+    print("postproc_manager | MASTER Postprocessing Mischief Managed.")
     
     
     
