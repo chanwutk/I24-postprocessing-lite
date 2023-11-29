@@ -4,7 +4,6 @@ import queue
 from collections import deque
 from utils.utils_stitcher_cost import stitch_cost, stitch_cost_simple_distance
 # from scipy import stats
-from i24_logger.log_writer import catch_critical
 import itertools
 import _pickle as pickle
 
