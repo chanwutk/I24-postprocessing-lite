@@ -4,6 +4,14 @@ A LITE version of the trajectory postprocessing pipeline.
 Project website: https://i24motion.org/. 
 
 This work is in review. The prepint is available at https://arxiv.org/abs/2212.07907.
+
+If you use the code or techniques in this work, please consider the following citations in your publications. This allows us to aggregate statistics on the data use in publications:
+
+> Wang, Y., Gloudemans, G., Ji, J., Teoh, Z.N., Liu, L., Zachar, G., Barbour, W., Work, D.B., 2023. Automatic vehicle trajectory data reconstruction at scale. arXiv preprint arXiv:2212.07907.
+
+> Gloudemans, D., Wang, Y., Ji, J., Zachar, G., Barbour, W., Hall, E., Cebelak, M., Smith, L. and Work, D.B., 2023. I-24 MOTION: An instrument for freeway traffic science. Transportation Research Part C: Emerging Technologies, 155, p.104311.
+
+The bibtex version of the references are:
 ```
 @article{wang2023automatic,
       title={Automatic vehicle trajectory data reconstruction at scale}, 
@@ -12,6 +20,19 @@ This work is in review. The prepint is available at https://arxiv.org/abs/2212.0
       journal={arXiv preprint arXiv:2212.07907},
 }
 ```
+
+```
+@article{gloudemans202324,
+  title={I-24 MOTION: An instrument for freeway traffic science},
+  author={Gloudemans, Derek and Wang, Yanbing and Ji, Junyi and Zachar, Gergely and Barbour, William and Hall, Eric and Cebelak, Meredith and Smith, Lee and Work, Daniel B},
+  journal={Transportation Research Part C: Emerging Technologies},
+  volume={155},
+  pages={104311},
+  year={2023},
+  publisher={Elsevier}
+}
+```
+
 
 ## The architecture
 
@@ -134,12 +155,7 @@ More on data schema and layout of the testbed can be found in [[data documentati
 
 
 ## Other related I-24 MOTION repositories
-### I24_logging
-https://github.com/Lab-Work/I24_logging
-### I24 Visualization
-https://github.com/yanb514/i24-overhead-visualizer
-https://github.com/zineanteoh/i24-overlay-visualizer
-### I24_transform_module
-https://github.com/Lab-Work/i24-transform-module
-### I24_database_api
-https://github.com/Lab-Work/i24_database_api
+### I-24 MOTION data documentation
+[https://github.com/I24-MOTION/I24M_documentation](https://github.com/I24-MOTION/I24M_documentation)
+### I-24 MOTION improvement tracker
+[https://github.com/I24-MOTION/I24M_improvement_tracker](https://github.com/I24-MOTION/I24M_improvement_tracker)
