@@ -19,7 +19,8 @@ The workflow of the processes are shown below. All the processes are managed by 
 ![postproc_lite_architecture](https://github.com/yanb514/I24-postprocessing-lite/assets/30248823/d9890bdd-ac3c-473a-8191-942c9157d3c7)
 
 ## Benchmarking datasets
-The benchmarking datasets released along with this paper are the following:
+The [benchmarking datasets](https://vanderbilt.box.com/s/w0x5qxua9u8b6hi225w8xn2l5gm36upf) released along with this paper are the following:
+
 - `SIM_GT`: TransModeler microsimulation data: 15 min, 2000 ft, 4 lanes
 - `SIM_RAW`: Manually perturbed TransModeler microsimulation data
 - `SIM_REC`: Reconstructed TransModeler microsimulation data from `SIM_RAW` using the proposed algorithms
@@ -47,11 +48,10 @@ run `pp_lite()` with the following config setting.
 ### Configuration setting 
 The config setting is located in `parameters.json`. You may specify the following parameters:
 
-- `description`: give a short description of the run. This information will be saved to database as meta data
-- `raw_database`: name of the database where the raw fragments are read. Currently set as "trajectories"
-- `reconciled_database`: name of the database where the final results are written to. Currently set as "reconciled"
-- `raw_collection`: name of the collection from `raw_database` that houses the raw fragments. If not specified here it should be specified as function input (see below)
-- `reconciled_collection`: name of the collection from `reconciled_database` that houses the final trajectories. If not specified here it should be specified as function input (see below),
+- `raw_collection`: name of the input .JSON file. E.g., "RAW_i.json". The input file should be accessible from the main directory.
+- `reconciled_collection`: name of the output file. It will be saved as a JSON file in the main directory after running `pp_lite()`.
+- `stitcher_args`: min cost flow related parameters, subject to tuning.
+- `reconciliation_args`: trajectory rectification related parameters, subject to tuning.
 
 
 ## Core algorithms
