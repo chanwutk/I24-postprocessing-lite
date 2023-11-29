@@ -1,4 +1,3 @@
-from i24_logger.log_writer import catch_critical
 import numpy as np
 from sklearn import linear_model
 from scipy.stats import linregress
@@ -22,7 +21,7 @@ def nan_helper(y):
     return np.isnan(y), lambda z: z.nonzero()[0]
 
 
-@catch_critical(errors = (Exception))
+
 def interpolate(traj):
     '''
     interpolate raw trajectories to get rid of nans in x_position and y_position
@@ -44,7 +43,6 @@ def interpolate(traj):
     return traj
 
 
-@catch_critical(errors = (Exception))
 def add_filter(traj, raw, residual_threshold_x, residual_threshold_y, 
                conf_threshold, remain_threshold):
     '''
@@ -128,7 +126,6 @@ def add_filter(traj, raw, residual_threshold_x, residual_threshold_y,
 
 
 
-@catch_critical(errors = (Exception))
 def calc_fit(traj, residual_threshold_x, residual_threshold_y):
     '''
     add a filter to trajectories based on
@@ -159,7 +156,6 @@ def calc_fit(traj, residual_threshold_x, residual_threshold_y):
 
     return traj
 
-@catch_critical(errors = (Exception))
 def calc_fit_select_ransac(t,x,y,residual_threshold_x, residual_threshold_y):
     '''
     same as calc_fit, but only on given t,x,y
@@ -183,7 +179,6 @@ def calc_fit_select_ransac(t,x,y,residual_threshold_x, residual_threshold_y):
     return fitx, fity
 
 
-@catch_critical(errors = (Exception))
 def calc_fit_select(t,x,y):
     '''
     same as calc_fit, but only on given t,x,y using least square
