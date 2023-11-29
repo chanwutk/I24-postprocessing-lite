@@ -1,6 +1,6 @@
 # I24-postprocessing-lite
 
-A LITE version of the trajectory postprocessing pipeline https://github.com/yanb514/I24-postprocessing. 
+A LITE version of the trajectory postprocessing pipeline. 
 Project website: https://i24motion.org/. 
 
 This work is in review. The prepint is available at https://arxiv.org/abs/2212.07907.
