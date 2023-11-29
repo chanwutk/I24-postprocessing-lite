@@ -3,13 +3,10 @@ import numpy as np
 from cvxopt import matrix, solvers, sparse,spdiag,spmatrix
 from bson.objectid import ObjectId
 from collections import defaultdict
-import os
-from i24_logger.log_writer import logger, catch_critical, log_warnings, log_errors
 # from .misc import flattenList
 
 # TODO
 # add try except and put errors/warnings to log
-logger.set_name("reconciliation_module")
 solvers.options['show_progress'] = False
 dt = 1/30
 
@@ -25,7 +22,7 @@ def flattenList(nestedList):
     # call function with sublist as argument
     return nestedList[:1] + flattenList(nestedList[1:])
 
-@catch_critical(errors = (Exception))
+
 def combine_fragments(all_fragment):
     '''
     stack fragments from stitched_doc to a single document
@@ -112,8 +109,6 @@ def combine_fragments(all_fragment):
     return stacked
 
 
-
-@catch_critical(errors = (Exception))    
 def resample(car, dt=0.04, fillnan=False):
     # resample timestamps to 30hz, leave nans for missing data
     '''
@@ -177,8 +172,7 @@ def resample(car, dt=0.04, fillnan=False):
 
 
 
-# ==================== CVX optimization for 2d dynamics ================== 
-@catch_critical(errors = (Exception))    
+# ==================== CVX optimization for 2d dynamics ==================    
 def opt1(car, lam3_x, lam3_y):
     '''
     1/M||z-Hx||_2^2 + \\lam3/N ||D3x||_2^2
@@ -369,7 +363,6 @@ def opt2_l1(car, lam2_x, lam2_y, lam3_x, lam3_y, lam1_x, lam1_y):
     return car 
 
 
-@catch_critical(errors = (Exception))
 def opt2_l1_constr(car, lam2_x, lam2_y, lam3_x, lam3_y, lam1_x, lam1_y):
     '''
     1/M||z-Hx||_2^2 + \\lam2/N ||D2x||_2^2 + \\lam3/N ||D3x||_2^2 + \\lam1/M ||e||_1
