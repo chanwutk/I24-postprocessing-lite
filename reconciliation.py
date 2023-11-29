@@ -1,12 +1,6 @@
 # -----------------------------
 __file__ = 'reconciliation.py'
 __doc__ = """
-
-Update 6/27/2021
-If each worker handles mongodb client connection, then they have to close the connection in order for the pool to join (in the event of graceful shutdown).
-It is not recommended by mongodb to open and close connections all the time.
-Instead, modify the code such that open the connection for dbreader and writer at the parent process. Each worker does not have direct access to mongodb client.
-After done processing, each worker send results back to the parent process using a queue
 """
 
 # -----------------------------
@@ -15,7 +9,6 @@ from multiprocessing import Pool
 import time
 import os
 import queue
-import i24_logger.log_writer as log_writer
 from decimal import Decimal
 import json
 
@@ -38,25 +31,19 @@ def reconcile_single_trajectory(reconciliation_args, combined_trajectory, reconc
     :return:
     """
     
-    rec_worker_logger = log_writer.logger 
-    rec_worker_logger.set_name("rec_worker")
-    setattr(rec_worker_logger, "_default_logger_extra",  {})
 
     resampled_trajectory = resample(combined_trajectory, dt=0.04)
     if "post_flag" in resampled_trajectory:
         # skip reconciliation
-        rec_worker_logger.info("+++ Flag as low conf, skip reconciliation", extra = None)
+        print("+++ Flag as low conf, skip reconciliation")
 
     else:
         try:
-            # finished_trajectory = rectify_2d(resampled_trajectory, reg = "l1", **reconciliation_args)  
             finished_trajectory = opt2_l1_constr(resampled_trajectory, **reconciliation_args)  
-            # finished_trajectory = opt2(resampled_trajectory, **reconciliation_args)  
             reconciled_queue.put(finished_trajectory)
-            # rec_worker_logger.debug("*** Reconciled a trajectory, duration: {:.2f}s, length: {}".format(finished_trajectory["last_timestamp"]-finished_trajectory["first_timestamp"], len(finished_trajectory["timestamp"])), extra = None)
-        
+           
         except Exception as e:
-            rec_worker_logger.info("+++ Flag as {}, skip reconciliation".format(str(e)), extra = None)
+            print("+++ Flag as {}, skip reconciliation".format(str(e)))
 
 
 
@@ -75,16 +62,12 @@ def reconciliation_pool(parameters, db_param, stitched_trajectory_queue: multipr
     
     # parameters
     reconciliation_args=parameters["reconciliation_args"]
-    
-    rec_parent_logger = log_writer.logger
-    rec_parent_logger.set_name("reconciliation")
-    setattr(rec_parent_logger, "_default_logger_extra",  {})
 
     # wait to get raw collection name
     while parameters["raw_collection"]=="":
         time.sleep(1)
     
-    rec_parent_logger.info("** Reconciliation pool starts. Pool size: {}".format(n_proc), extra = None)
+    print("** Reconciliation pool starts. Pool size: {}".format(n_proc))
     TIMEOUT = parameters["reconciliation_pool_timeout"]
     
     cntr = 0
@@ -94,7 +77,7 @@ def reconciliation_pool(parameters, db_param, stitched_trajectory_queue: multipr
                 traj_docs = stitched_trajectory_queue.get(timeout = TIMEOUT) #20sec
                 cntr += 1
             except queue.Empty: 
-                rec_parent_logger.warning("Reconciliation pool is timed out after {}s. Close the reconciliation pool.".format(TIMEOUT))
+                print("Reconciliation pool is timed out after {}s. Close the reconciliation pool.".format(TIMEOUT))
                 worker_pool.close()
                 break
             if isinstance(traj_docs, list):
@@ -105,7 +88,7 @@ def reconciliation_pool(parameters, db_param, stitched_trajectory_queue: multipr
             worker_pool.apply_async(reconcile_single_trajectory, (reconciliation_args, combined_trajectory, reconciled_queue, ))
 
         except Exception as e: # other exception
-            rec_parent_logger.warning("{}, Close the pool".format(e))
+            print("{}, Close the pool".format(e))
             worker_pool.close() # wait until all processes finish their task
             break
             
@@ -113,7 +96,7 @@ def reconciliation_pool(parameters, db_param, stitched_trajectory_queue: multipr
         
     # Finish up  
     worker_pool.join()
-    rec_parent_logger.info("Joined the pool.")
+    print("Joined the pool.")
     
     return
 
@@ -121,9 +104,7 @@ def reconciliation_pool(parameters, db_param, stitched_trajectory_queue: multipr
 
 def write_reconciled_to_db(parameters, db_param, reconciled_queue):
     
-    reconciled_writer = log_writer.logger
-    reconciled_writer.set_name("reconciliation_writer")
-    
+        
     TIMEOUT = parameters["reconciliation_writer_timeout"]
     cntr = 0
     HB = parameters["log_heartbeat"]
@@ -146,7 +127,7 @@ def write_reconciled_to_db(parameters, db_param, reconciled_queue):
         try:
             record = reconciled_queue.get(timeout = TIMEOUT)
         except queue.Empty:
-            reconciled_writer.warning("Getting from reconciled_queue reaches timeout {} sec.".format(TIMEOUT))
+            print("Getting from reconciled_queue reaches timeout {} sec.".format(TIMEOUT))
             break
 
         # TODO: write one
@@ -177,12 +158,12 @@ def write_reconciled_to_db(parameters, db_param, reconciled_queue):
             begin = time.time()
             
             # TODO: progress update
-            reconciled_writer.info(f"Writing {cntr} documents in this batch")
+            print(f"Writing {cntr} documents in this batch")
             
 
     
     # Safely close the mongodb client connection
-    reconciled_writer.warning(f"JSON writer closed. Current count: {cntr}. Exit")
+    print(f"JSON writer closed. Current count: {cntr}. Exit")
     return
 
 
