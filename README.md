@@ -13,6 +13,9 @@ This work is in review. The prepint is available at https://arxiv.org/abs/2212.0
 }
 ```
 
+## The architecture
+
+The workflow of the processes are shown below. All the processes are managed by a python multiprocessing manager. The corresponding module and function name for each process is written underneath the process name. The input and output files are flat .JSON files.
 ![postproc_lite_architecture](https://github.com/yanb514/I24-postprocessing-lite/assets/30248823/d9890bdd-ac3c-473a-8191-942c9157d3c7)
 
 ## Benchmarking datasets
