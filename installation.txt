@@ -1,19 +1,10 @@
-conda activate postproc
-pip install git+https://github.com/DerekGloudemans/i24_configparse@latest
-pip install git+https://github.com/Lab-Work/I24_logging@latest
-pip install git+https://github.com/yanb514/i24_database_api@latest
-conda install pandas
 
-if run into libarchive issue
-conda install -c conda-forge libarchive
-conda install -c anaconda networkx
-conda install scikit-learn
-conda install -c conda-forge cvxopt
-conda install -c conda-forge cvxpy
-conda install -c conda-forge pyscipopt=3.5.0 # integer programming solver
-
-
-
-
-pip install statsmodels
-pip install ijson
+cvxopt==1.3.2
+cvxpy==1.4.1
+i24-logger @ git+https://github.com/Lab-Work/I24_logging@75755888c73a6067d856cdfdeb247ad0ff8d85a0
+ijson==3.2.3
+numpy==1.26.1
+pandas==2.1.2
+scikit-learn==1.3.2
+scipy==1.11.3
+statsmodels==0.14.0
